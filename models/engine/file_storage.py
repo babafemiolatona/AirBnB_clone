@@ -43,4 +43,3 @@ class FileStorage:
                 FileStorage.__objects[k] = class_name(**v)
         except FileNotFoundError:
             pass
-
