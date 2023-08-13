@@ -7,11 +7,11 @@ import models
 
 class BaseModel:
     """Base Class"""
-    def _init_(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Initialization of the public instance attributes"""
         if kwargs:
             for k, v in kwargs.items():
-                if k != '_class_':
+                if k != '__class__':
                     setattr(self, k, v)
                 if k in ('created_at', 'updated_at'):
                     setattr(self, k, datetime.fromisoformat(v))
@@ -21,10 +21,10 @@ class BaseModel:
             self.updated_at = self.created_at
             models.storage.new(self)
 
-    def _str_(self):
+    def __str__(self):
         """Returns string representation of the Base Model class"""
-        return "[{}] ({}) {}".format(self._class.name_,
-                                     self.id, self._dict_)
+        return "[{}] ({}) {}".format(self.__class__.__name__,
+                                     self.id, self.__dict__)
 
     def save(self):
         """Updates the updated_at attribute with the current datetime"""
@@ -33,8 +33,8 @@ class BaseModel:
 
     def to_dict(self):
         """Returns dict represention of the instance"""
-        dict_cpy = self._dict_.copy()
-        dict_cpy['_class'] = self.class.name_
+        dict_cpy = self.__dict__.copy()
+        dict_cpy['__class__'] = self.__class__.__name__
         dict_cpy['created_at'] = self.created_at.isoformat()
         dict_cpy['updated_at'] = self.updated_at.isoformat()
         return dict_cpy
