@@ -1,167 +1,192 @@
 #!/usr/bin/python3
-"""Defines unittests for models/engine/file_storage.py."""
-import os
-import json
-import models
+"""Unit tests for BaseModel class"""
+
 import unittest
-from datetime import datetime
+import models
 from models.base_model import BaseModel
-from models.engine.file_storage import FileStorage
-from models.user import User
-from models.state import State
-from models.place import Place
-from models.city import City
-from models.amenity import Amenity
-from models.review import Review
+from datetime import datetime
+from time import sleep
+import os
 
 
-class TestFileStorage(unittest.TestCase):
-    """Unittests for testing instantiation of the FileStorage class."""
+class Test_BaseModel(unittest.TestCase):
+    """Test casess for BaseModel class"""
 
-    def test_FileStorage_no_args(self):
-        self.assertEqual(type(FileStorage()), FileStorage)
-
-    def test_FileStorage_with_arg(self):
-        with self.assertRaises(TypeError):
-            FileStorage(None)
-
-    def test_FileStorage_file_path_is_private_str(self):
-        self.assertEqual(str, type(FileStorage._FileStorage__file_path))
-
-    def testFileStorage_objects_is_private_dict(self):
-        self.assertEqual(dict, type(FileStorage._FileStorage__objects))
-
-    def test_storage_initializes(self):
-        self.assertEqual(type(models.storage), FileStorage)
-
-
-class TestFileStorage_methods(unittest.TestCase):
-    """Unittests for testing methods of the FileStorage class."""
-
-    @classmethod
     def setUp(self):
-        try:
-            os.rename("data.json", "test")
-        except IOError:
-            pass
+        """Set up the env before each test case"""
+        self.base_model = BaseModel()
 
-    @classmethod
     def tearDown(self):
-        try:
-            os.remove("data.json")
-        except IOError:
-            pass
-        try:
-            os.rename("test", "data.json")
-        except IOError:
-            pass
-        FileStorage._FileStorage__objects = {}
+        """Clean up the test env after each test case if needed"""
+        pass
 
-    def test_all(self):
-        self.assertEqual(dict, type(models.storage.all()))
+    def test_init_with_arguments(self):
+        """Test initialization with arguments"""
+        data = {
+            'id': '123',
+            'created_at': '2023-01-01T00:00:00',
+            'updated_at': '2023-01-01T00:00:00',
+            'name': 'Test'
+        }
+        base_model = BaseModel(**data)
 
-    def test_all_with_arg(self):
+        # Verify that the attributes are set correctly
+        self.assertEqual(base_model.id, '123')
+        self.assertEqual(base_model.created_at,
+                         datetime.fromisoformat('2023-01-01T00:00:00'))
+        self.assertEqual(base_model.updated_at,
+                         datetime.fromisoformat('2023-01-01T00:00:00'))
+        self.assertEqual(base_model.name, 'Test')
+
+    def test_init_without_arguments(self):
+        """Test initialization without arguments"""
+        base_model = BaseModel()
+
+        # Verify that the attributes are set correctly
+        self.assertIsNotNone(base_model.id)
+        self.assertIsNotNone(base_model.created_at)
+        self.assertIsNotNone(base_model.updated_at)
+        self.assertEqual(base_model.created_at, base_model.updated_at)
+
+    def test_args(self):
+        """Testing args which was unused"""
+        bm = BaseModel(None)
+        self.assertNotIn(None, bm.__dict__.values())
+
+    def test_with_kwargs(self):
+        """Testing with kwargs"""
+        date = datetime.now()
+        tform = date.isoformat()
+        bm = BaseModel(id="123", created_at=tform, updated_at=tform)
+        self.assertEqual(bm.id, "123")
+        self.assertEqual(bm.created_at, date)
+        self.assertEqual(bm.updated_at, date)
+
+    def test_kwargs_None(self):
+        """Testing with kwargs at None"""
         with self.assertRaises(TypeError):
-            models.storage.all(None)
+            BaseModel(id=None, created_at=None, updated_at=None)
 
-    def test_new(self):
-        basemodel = BaseModel()
-        user = User()
-        state = State()
-        place = Place()
-        city = City()
-        amenity = Amenity()
-        review = Review()
-        models.storage.new(basemodel)
-        models.storage.new(user)
-        models.storage.new(state)
-        models.storage.new(place)
-        models.storage.new(city)
-        models.storage.new(amenity)
-        models.storage.new(review)
-        self.assertIn("BaseModel." + basemodel.id, models.storage.all().keys())
-        self.assertIn(basemodel, models.storage.all().values())
-        self.assertIn("User." + user.id, models.storage.all().keys())
-        self.assertIn(user, models.storage.all().values())
-        self.assertIn("State." + state.id, models.storage.all().keys())
-        self.assertIn(state, models.storage.all().values())
-        self.assertIn("Place." + place.id, models.storage.all().keys())
-        self.assertIn(place, models.storage.all().values())
-        self.assertIn("City." + city.id, models.storage.all().keys())
-        self.assertIn(city, models.storage.all().values())
-        self.assertIn("Amenity." + amenity.id, models.storage.all().keys())
-        self.assertIn(amenity, models.storage.all().values())
-        self.assertIn("Review." + review.id, models.storage.all().keys())
-        self.assertIn(review, models.storage.all().values())
+    def test_with_args_and_kwargs(self):
+        """ testing with both args and kwargs"""
+        date = datetime.now()
+        tform = date.isoformat()
+        bm = BaseModel(id="123", created_at=tform, updated_at=tform)
+        self.assertEqual(bm.id, "123")
+        self.assertEqual(bm.created_at, date)
+        self.assertEqual(bm.updated_at, date)
 
-    def test_new_with_args(self):
-        with self.assertRaises(TypeError):
-            models.storage.new(BaseModel(), 1)
+    def test_id_is_str(self):
+        """checks if id data type"""
+        self.assertEqual(str, type(BaseModel().id))
 
-    def test_new_with_None(self):
-        with self.assertRaises(AttributeError):
-            models.storage.new(None)
+    def test_id_is_unique(self):
+        """test if id generated are unique"""
+        user1 = BaseModel()
+        user2 = BaseModel()
+        self.assertNotEqual(user1.id, user2.id)
+
+    def test_created_at_datetime(self):
+        """Checks if the attribute is a datetime object"""
+        self.assertEqual(datetime, type(BaseModel().created_at))
+
+    def test_created_at_timestamp(self):
+        """checks if the timestamp is different"""
+        user1 = BaseModel()
+        sleep(0.05)
+        user2 = BaseModel()
+        self.assertLess(user1.created_at, user2.created_at)
+
+    def test_updated_at_datetime(self):
+        """Checks if attribute is a datetime object"""
+        self.assertEqual(datetime, type(BaseModel(). updated_at))
+
+    def test_updated_at_timestamp(self):
+        """Checks if the timestamp is different"""
+        user1 = BaseModel()
+        sleep(0.05)
+        user2 = BaseModel()
+        self.assertLess(user1.updated_at, user2.updated_at)
+
+    def test_instance_storage(self):
+        """checks if storage and retrival were successful"""
+        self.assertIn(BaseModel(), models.storage.all().values())
+
+    def test__str__(self):
+        """tests the string representation"""
+        bm1 = BaseModel()
+        bm2 = BaseModel()
+        self.assertNotEqual(bm1.__str__(), bm2.__str__())
 
     def test_save(self):
-        basemodel = BaseModel()
-        user = User()
-        state = State()
-        place = Place()
-        city = City()
-        amenity = Amenity()
-        review = Review()
-        models.storage.new(basemodel)
-        models.storage.new(user)
-        models.storage.new(state)
-        models.storage.new(place)
-        models.storage.new(city)
-        models.storage.new(amenity)
-        models.storage.new(review)
-        models.storage.save()
-        save_text = ""
-        with open("file.json", "r") as f:
-            save_text = f.read()
-            self.assertIn("BaseModel." + basemodel.id, save_text)
-            self.assertIn("User." + user.id, save_text)
-            self.assertIn("State." + state.id, save_text)
-            self.assertIn("Place." + place.id, save_text)
-            self.assertIn("City." + city.id, save_text)
-            self.assertIn("Amenity." + amenity.id, save_text)
-            self.assertIn("Review." + review.id, save_text)
+        """tests the effective of timestamp updates"""
+        bm = BaseModel()
+        sleep(0.1)
+        update = bm.updated_at
+        bm.save()
+        self.assertLess(update, bm.updated_at)
 
-    def test_save_with_arg(self):
-        with self.assertRaises(TypeError):
-            models.storage.save(None)
+    def test_two_saves(self):
+        """tests the effectivity of diffrent timestamps updates"""
+        bm = BaseModel()
+        sleep(0.1)
+        upadte1 = bm.updated_at
+        bm.save()
+        update2 = bm.updated_at
+        self.assertLess(upadte1, update2)
+        sleep(0.1)
+        bm.save()
+        self.assertLess(update2, bm.updated_at)
 
-    def test_reload(self):
-        basenodel = BaseModel()
-        user = User()
-        state = State()
-        place = Place()
-        city = City()
-        amenity = Amenity()
-        review = Review()
-        models.storage.new(basenodel)
-        models.storage.new(user)
-        models.storage.new(state)
-        models.storage.new(place)
-        models.storage.new(city)
-        models.storage.new(amenity)
-        models.storage.new(review)
-        models.storage.save()
-        models.storage.reload()
-        objs = FileStorage._FileStorage__objects
-        self.assertIn("BaseModel." + basenodel.id, objs)
-        self.assertIn("User." + user.id, objs)
-        self.assertIn("State." + state.id, objs)
-        self.assertIn("Place." + place.id, objs)
-        self.assertIn("City." + city.id, objs)
-        self.assertIn("Amenity." + amenity.id, objs)
-        self.assertIn("Review." + review.id, objs)
+    def test_save_updates_file(self):
+        """tests that updates are updated and stored correctly"""
+        bm = BaseModel()
+        bm.save()
+        bmid = "BaseModel." + bm.id
+        with open("file.json", "r") as file:
+            self.assertIn(bmid, file.read())
 
-    def test_reload_with_arg(self):
-        with self.assertRaises(TypeError):
-            models.storage.reload(None)
+    def test_to_dict(self):
+        """Tests the expected output"""
+        expected_dict = {
+            'id': self.base_model.id,
+            'created_at': self.base_model.created_at.isoformat(),
+            'updated_at': self.base_model.updated_at.isoformat(),
+            '__class__': 'BaseModel'
+        }
+        self.assertEqual(self.base_model.to_dict(), expected_dict)
+
+    def test_to_dict_type(self):
+        """verifys the class returns a dictionary"""
+        bm = BaseModel()
+        self.assertTrue(dict, type(bm.to_dict()))
+
+    def test_different_to_dict(self):
+        """tests that the class produces 2 diff dict for diff instances"""
+        bm1 = BaseModel()
+        sleep(0.05)
+        bm2 = BaseModel()
+        self.assertNotEqual(bm1.to_dict(), bm2.to_dict())
+
+    def test_to_dict_has_correct_keys(self):
+        """tests that the dict contains the right keys"""
+        bm = BaseModel()
+        self.assertIn("id", bm.to_dict())
+        self.assertIn("__class__", bm.to_dict())
+        self.assertIn("created_at", bm.to_dict())
+        self.assertIn("updated_at", bm.to_dict())
+
+    def test_to_dict_created_at_format(self):
+        """checks the ISO formatted string"""
+        bm = self.base_model.to_dict()
+        created_at = bm["created_at"]
+        self.assertEqual(created_at, self.base_model.created_at.isoformat())
+
+    def test_to_dict_updated_at_format(self):
+        """checks the ISO formatted string"""
+        bm = self.base_model.to_dict()
+        updated_at = bm["updated_at"]
+        self.assertEqual(updated_at, self.base_model.updated_at.isoformat())
 
 
 if __name__ == "__main__":
